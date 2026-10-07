@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>场景三：虚假 WiFi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-container" style="background-image: url('素材/背景/five.png');"></div>
+
+    <div class="characters-wrapper">
+        <!-- 前台（左） -->
+        <div class="character-container left dim hidden-character" id="characterQT">
+            <img src="素材/人物立绘/QT.png" alt="前台" class="character-img">
+        </div>
+        <!-- 小李（右） -->
+        <div class="character-container right dim hidden-character" id="characterLi">
+            <img src="素材/人物立绘/Lee.png" alt="小李" class="character-img">
+        </div>
+    </div>
+
+    <div class="dialog-box" id="dialogBox">
+        <div class="speaker-name" id="speakerName" style="display: none;">小李</div>
+        <div class="dialog-text" id="dialogText"></div>
+    </div>
+
+    <div class="choice-container hidden" id="choiceContainer">
+        <button class="choice-btn" id="choiceA">免费的网络不用白不用</button>
+        <button class="choice-btn" id="choiceB">我印象中咖啡馆一般会提供正规的网络和密码</button>
+    </div>
+
+    <div class="system-toast" id="systemToast"></div>
+    <button class="return-btn" id="returnBtn">返回</button>
+
+    <script>
+        let currentBranch = 'start'; 
+        let stepIndex = 0;
+        let seenQT = false; 
+        let seenLi = false;
+
+        const storyData = {
+            start: [
+                { speaker: '小李', pos: 'right', text: '等待的时候，上网冲浪一下吧。' },
+                { speaker: '小李', pos: 'right', text: '咦，这里怎么有个免费的网络，写着“datong_caffee”？' },
+                { type: 'choice' }
+            ],
+            badEnding: [
+                { speaker: '旁白', text: '几天之后，小李发现自己手机上很多软件被上了锁，报警求助才知道自己中了勒索病毒。' },
+                { type: 'toast', text: '达成成就“拿来吧你”' }
+            ],
+            goodEnding: [
+                { speaker: '旁白', text: '小李走到前台处。' },
+                { speaker: '小李', pos: 'right', text: '请问这里提不提供网络？' },
+                { speaker: '前台', pos: 'left', text: '有的。账号名是“datong_coffee”，密码是8个8，可不要点错点成那个不需要密码的哦。' },
+                { speaker: '旁白', text: '不久后，小李看到一则新闻，得知勒索病毒“永恒之蓝”借助假冒WiFi进行攻击，庆幸自己几天前没有使用那个免费的网络。' },
+                { type: 'toast', text: '达成成就“有惊无险”' }
+            ]
+        };
+
+        const characterQT = document.getElementById('characterQT');
+        const characterLi = document.getElementById('characterLi');
+        const dialogBox = document.getElementById('dialogBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogText = document.getElementById('dialogText');
+        const choiceContainer = document.getElementById('choiceContainer');
+        const systemToast = document.getElementById('systemToast');
+        const returnBtn = document.getElementById('returnBtn');
+
+        function resetCharacters() {
+            // 前台
+            characterQT.classList.remove('bright'); characterQT.classList.add('dim');
+            if (!seenQT) characterQT.classList.add('hidden-character'); else characterQT.classList.remove('hidden-character');
+            // 小李
+            characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+            if (!seenLi) characterLi.classList.add('hidden-character'); else characterLi.classList.remove('hidden-character');
+        }
+
+        function initGame() {
+            currentBranch = 'start'; stepIndex = 0;
+            seenQT = false; seenLi = false;
+            returnBtn.style.display = 'none';
+            systemToast.classList.remove('show');
+            dialogBox.classList.remove('empty-text');
+            speakerName.style.display = 'none';
+            dialogText.textContent = '';
+            choiceContainer.classList.add('hidden');
+            resetCharacters();
+            renderNode();
+        }
+
+        function renderNode() {
+            const branchData = storyData[currentBranch];
+            if (!branchData || stepIndex >= branchData.length) return;
+            const node = branchData[stepIndex];
+
+            if (node.speaker) {
+                if (node.speaker === '旁白') {
+                    speakerName.style.display = 'none';
+                    resetCharacters();
+                } else {
+                    speakerName.style.display = 'block';
+                    speakerName.textContent = node.speaker;
+                    
+                    if (node.pos === 'left') {
+                        seenQT = true;
+                        characterQT.classList.remove('hidden-character', 'dim');
+                        characterQT.classList.add('bright');
+                        characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+                        if (seenLi) characterLi.classList.remove('hidden-character');
+                    } else if (node.pos === 'right') {
+                        seenLi = true;
+                        characterLi.classList.remove('hidden-character', 'dim');
+                        characterLi.classList.add('bright');
+                        characterQT.classList.remove('bright'); characterQT.classList.add('dim');
+                        if (seenQT) characterQT.classList.remove('hidden-character');
+                    }
+                }
+                dialogText.textContent = node.text;
+                dialogBox.classList.remove('empty-text');
+                choiceContainer.classList.add('hidden');
+            } else if (node.type === 'choice') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                resetCharacters(); // 已登场人物变暗
+                choiceContainer.classList.remove('hidden');
+            } else if (node.type === 'toast') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                characterQT.classList.add('hidden-character');
+                characterLi.classList.add('hidden-character');
+                systemToast.textContent = node.text;
+                systemToast.classList.add('show');
+                setTimeout(() => { returnBtn.style.display = 'block'; }, 1000);
+            }
+        }
+
+        dialogBox.addEventListener('click', () => {
+            if (!choiceContainer.classList.contains('hidden')) return;
+            stepIndex++;
+            if (stepIndex < storyData[currentBranch].length) renderNode();
+        });
+
+        document.getElementById('choiceA').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'badEnding'; stepIndex = 0; renderNode(); });
+        document.getElementById('choiceB').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'goodEnding'; stepIndex = 0; renderNode(); });
+        returnBtn.addEventListener('click', () => { window.location.href = 'option.html'; });
+        window.onload = initGame;
+    </script>
+</body>
+</html>

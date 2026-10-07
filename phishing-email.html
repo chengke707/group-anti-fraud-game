@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>场景四：钓鱼邮件</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-container" style="background-image: url('素材/背景/six.jpg');"></div>
+
+    <div class="characters-wrapper">
+        <!-- 妈妈（左） -->
+        <div class="character-container left dim hidden-character" id="characterMom">
+            <img src="素材/人物立绘/Mom.png" alt="妈妈" class="character-img">
+        </div>
+        <!-- 小李（右） -->
+        <div class="character-container right dim hidden-character" id="characterLi">
+            <img src="素材/人物立绘/Lee.png" alt="小李" class="character-img">
+        </div>
+    </div>
+
+    <div class="dialog-box" id="dialogBox">
+        <div class="speaker-name" id="speakerName" style="display: none;">旁白</div>
+        <div class="dialog-text" id="dialogText"></div>
+    </div>
+
+    <div class="choice-container hidden" id="choiceContainer">
+        <button class="choice-btn" id="choiceA">难道我真忘交了，还是补交一下吧</button>
+        <button class="choice-btn" id="choiceB">这邮箱后缀不对啊，估计是钓鱼的吧</button>
+    </div>
+
+    <div class="system-toast" id="systemToast"></div>
+    <button class="return-btn" id="returnBtn">返回</button>
+
+    <script>
+        let currentBranch = 'start'; 
+        let stepIndex = 0;
+        let seenMom = false; 
+        let seenLi = false;
+
+        const storyData = {
+            start: [
+                { speaker: '旁白', text: '小李接收到企业微信上“教务处”的通知，说他本学期学费未交，及时将学费打到某账号上。' },
+                { speaker: '小李', pos: 'right', text: '咦，怎么回事儿？我记得我交了啊。' },
+                { speaker: '旁白', text: '小李点开通知，查看详情。' },
+                { speaker: '小李', pos: 'right', text: '怎么搞得好像真的一样。' },
+                { type: 'choice' }
+            ],
+            badEnding: [
+                { speaker: '旁白', text: '小李打电话给妈妈索要学费。' },
+                { speaker: '妈妈', pos: 'left', text: '你怎么搞的？连学费都不记得交' },
+                { speaker: '妈妈', pos: 'left', text: '嗯？这学期的学费我之前不是给你了吗？你该不会是被骗了吧？' },
+                { speaker: '小李', pos: 'right', text: '啊，不是吧？我看看......' },
+                { speaker: '旁白', text: '小李发现了通知详细信息中邮箱处不对劲的地方。' },
+                { type: 'toast', text: '达成成就“清澈单纯”' }
+            ],
+            goodEnding: [
+                { speaker: '旁白', text: '小李立即将情况反映给辅导员，辅导员检查后告诉他这是假消息，并在班级通知群当中通知了这件事。' },
+                { type: 'toast', text: '达成成就“见招拆招”' }
+            ]
+        };
+
+        const characterMom = document.getElementById('characterMom');
+        const characterLi = document.getElementById('characterLi');
+        const dialogBox = document.getElementById('dialogBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogText = document.getElementById('dialogText');
+        const choiceContainer = document.getElementById('choiceContainer');
+        const systemToast = document.getElementById('systemToast');
+        const returnBtn = document.getElementById('returnBtn');
+
+        function resetCharacters() {
+            characterMom.classList.remove('bright'); characterMom.classList.add('dim');
+            if (!seenMom) characterMom.classList.add('hidden-character'); else characterMom.classList.remove('hidden-character');
+            
+            characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+            if (!seenLi) characterLi.classList.add('hidden-character'); else characterLi.classList.remove('hidden-character');
+        }
+
+        function initGame() {
+            currentBranch = 'start'; stepIndex = 0;
+            seenMom = false; seenLi = false;
+            returnBtn.style.display = 'none';
+            systemToast.classList.remove('show');
+            dialogBox.classList.remove('empty-text');
+            speakerName.style.display = 'none';
+            dialogText.textContent = '';
+            choiceContainer.classList.add('hidden');
+            resetCharacters();
+            renderNode();
+        }
+
+        function renderNode() {
+            const branchData = storyData[currentBranch];
+            if (!branchData || stepIndex >= branchData.length) return;
+            const node = branchData[stepIndex];
+
+            if (node.speaker) {
+                if (node.speaker === '旁白') {
+                    speakerName.style.display = 'none';
+                    resetCharacters();
+                } else {
+                    speakerName.style.display = 'block';
+                    speakerName.textContent = node.speaker;
+                    
+                    if (node.pos === 'left') {
+                        seenMom = true;
+                        characterMom.classList.remove('hidden-character', 'dim');
+                        characterMom.classList.add('bright');
+                        characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+                        if (seenLi) characterLi.classList.remove('hidden-character');
+                    } else if (node.pos === 'right') {
+                        seenLi = true;
+                        characterLi.classList.remove('hidden-character', 'dim');
+                        characterLi.classList.add('bright');
+                        characterMom.classList.remove('bright'); characterMom.classList.add('dim');
+                        if (seenMom) characterMom.classList.remove('hidden-character');
+                    }
+                }
+                dialogText.textContent = node.text;
+                dialogBox.classList.remove('empty-text');
+                choiceContainer.classList.add('hidden');
+            } else if (node.type === 'choice') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                resetCharacters();
+                choiceContainer.classList.remove('hidden');
+            } else if (node.type === 'toast') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                characterMom.classList.add('hidden-character');
+                characterLi.classList.add('hidden-character');
+                systemToast.textContent = node.text;
+                systemToast.classList.add('show');
+                setTimeout(() => { returnBtn.style.display = 'block'; }, 1000);
+            }
+        }
+
+        dialogBox.addEventListener('click', () => {
+            if (!choiceContainer.classList.contains('hidden')) return;
+            stepIndex++;
+            if (stepIndex < storyData[currentBranch].length) renderNode();
+        });
+
+        document.getElementById('choiceA').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'badEnding'; stepIndex = 0; renderNode(); });
+        document.getElementById('choiceB').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'goodEnding'; stepIndex = 0; renderNode(); });
+        returnBtn.addEventListener('click', () => { window.location.href = 'option.html'; });
+        window.onload = initGame;
+    </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>场景五：恶意二维码</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-container" style="background-image: url('素材/背景/seven.jpeg');"></div>
+
+    <div class="characters-wrapper">
+        <!-- 警察（左） -->
+        <div class="character-container left dim hidden-character" id="characterCop">
+            <img src="素材/人物立绘/Cop.png" alt="警察" class="character-img">
+        </div>
+        <!-- 小李（右） -->
+        <div class="character-container right dim hidden-character" id="characterLi">
+            <img src="素材/人物立绘/Lee.png" alt="小李" class="character-img">
+        </div>
+    </div>
+
+    <div class="dialog-box" id="dialogBox">
+        <div class="speaker-name" id="speakerName" style="display: none;">旁白</div>
+        <div class="dialog-text" id="dialogText"></div>
+    </div>
+
+    <div class="choice-container hidden" id="choiceContainer">
+        <button class="choice-btn" id="choiceA">算了，不管了，随便扫一个吧</button>
+        <button class="choice-btn" id="choiceB">旁边的共享单车只有一个二维码呀，我还是换一辆车吧</button>
+    </div>
+
+    <div class="system-toast" id="systemToast"></div>
+    <button class="return-btn" id="returnBtn">返回</button>
+
+    <script>
+        let currentBranch = 'start'; 
+        let stepIndex = 0;
+        let seenCop = false; 
+        let seenLi = false;
+
+        const storyData = {
+            start: [
+                { speaker: '旁白', text: '小李想要骑共享单车出去玩，扫码的时候，发现自己要骑的共享单车有两个二维码。' },
+                { speaker: '小李', pos: 'right', text: '该扫哪个二维码呢？' },
+                { type: 'choice' }
+            ],
+            badEnding: [
+                { speaker: '旁白', text: '小李恰好扫了那个跟别的共享单车不一样的二维码，结果进入了不明网站，并且无法退出。' },
+                { type: 'toast', text: '达成成就“覆水难收”' }
+            ],
+            goodEnding: [
+                { speaker: '旁白', text: '小李游完回来打算将共享单车放回原来的位置，发现一堆人围在共享单车旁边。' },
+                { speaker: '警察', pos: 'left', text: '小伙子，你刚刚有扫这辆共享单车不一样的二维码吗？' },
+                { speaker: '小李', pos: 'right', text: '没有啊，我感觉那个二维码太奇怪了，就换了一辆单车扫走了。' },
+                { speaker: '警察', pos: 'left', text: '没有就好，这个二维码指向的网页里有勒索病毒。' },
+                { type: 'toast', text: '达成成就“百毒不侵”' }
+            ]
+        };
+
+        const characterCop = document.getElementById('characterCop');
+        const characterLi = document.getElementById('characterLi');
+        const dialogBox = document.getElementById('dialogBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogText = document.getElementById('dialogText');
+        const choiceContainer = document.getElementById('choiceContainer');
+        const systemToast = document.getElementById('systemToast');
+        const returnBtn = document.getElementById('returnBtn');
+
+        function resetCharacters() {
+            characterCop.classList.remove('bright'); characterCop.classList.add('dim');
+            if (!seenCop) characterCop.classList.add('hidden-character'); else characterCop.classList.remove('hidden-character');
+            
+            characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+            if (!seenLi) characterLi.classList.add('hidden-character'); else characterLi.classList.remove('hidden-character');
+        }
+
+        function initGame() {
+            currentBranch = 'start'; stepIndex = 0;
+            seenCop = false; seenLi = false;
+            returnBtn.style.display = 'none';
+            systemToast.classList.remove('show');
+            dialogBox.classList.remove('empty-text');
+            speakerName.style.display = 'none';
+            dialogText.textContent = '';
+            choiceContainer.classList.add('hidden');
+            resetCharacters();
+            renderNode();
+        }
+
+        function renderNode() {
+            const branchData = storyData[currentBranch];
+            if (!branchData || stepIndex >= branchData.length) return;
+            const node = branchData[stepIndex];
+
+            if (node.speaker) {
+                if (node.speaker === '旁白') {
+                    speakerName.style.display = 'none';
+                    resetCharacters();
+                } else {
+                    speakerName.style.display = 'block';
+                    speakerName.textContent = node.speaker;
+                    
+                    if (node.pos === 'left') {
+                        seenCop = true;
+                        characterCop.classList.remove('hidden-character', 'dim');
+                        characterCop.classList.add('bright');
+                        characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+                        if (seenLi) characterLi.classList.remove('hidden-character');
+                    } else if (node.pos === 'right') {
+                        seenLi = true;
+                        characterLi.classList.remove('hidden-character', 'dim');
+                        characterLi.classList.add('bright');
+                        characterCop.classList.remove('bright'); characterCop.classList.add('dim');
+                        if (seenCop) characterCop.classList.remove('hidden-character');
+                    }
+                }
+                dialogText.textContent = node.text;
+                dialogBox.classList.remove('empty-text');
+                choiceContainer.classList.add('hidden');
+            } else if (node.type === 'choice') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                resetCharacters();
+                choiceContainer.classList.remove('hidden');
+            } else if (node.type === 'toast') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                characterCop.classList.add('hidden-character');
+                characterLi.classList.add('hidden-character');
+                systemToast.textContent = node.text;
+                systemToast.classList.add('show');
+                setTimeout(() => { returnBtn.style.display = 'block'; }, 1000);
+            }
+        }
+
+        dialogBox.addEventListener('click', () => {
+            if (!choiceContainer.classList.contains('hidden')) return;
+            stepIndex++;
+            if (stepIndex < storyData[currentBranch].length) renderNode();
+        });
+
+        document.getElementById('choiceA').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'badEnding'; stepIndex = 0; renderNode(); });
+        document.getElementById('choiceB').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'goodEnding'; stepIndex = 0; renderNode(); });
+        returnBtn.addEventListener('click', () => { window.location.href = 'option.html'; });
+        window.onload = initGame;
+    </script>
+</body>
+</html>

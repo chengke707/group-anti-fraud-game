@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>防诈骗测试 - 选择场景</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 背景图（不重复） -->
+    <div class="bg-container" style="background-image: url('素材/背景/two.jpeg');"></div>
+
+    <div class="option-container">
+        <button class="option-btn" data-target="click-farming.html">刷单诈骗</button>
+        <button class="option-btn" data-target="face-swapping.html">AI换脸</button>
+        <button class="option-btn" data-target="phishing-WiFi.html">虚假 WiFi</button>
+        <button class="option-btn" data-target="phishing-email.html">钓鱼邮件</button>
+        <button class="option-btn" data-target="malicious-QRcode.html">恶意二维码</button>
+    </div>
+
+    <script>
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                window.location.href = this.getAttribute('data-target');
+            });
+        });
+    </script>
+</body>
+</html>

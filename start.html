@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>防诈骗测试 - 开始</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 背景图（不重复） -->
+    <div class="bg-container" style="background-image: url('素材/背景/one.jpg');"></div>
+
+    <div class="start-container">
+        <h1 class="question-title" style="margin-bottom: 40px; font-size: 2.5rem; color: #0f2a5c;">【互动】你是那个"局中人"吗</h1>
+        <button class="start-btn" id="startBtn">开始测试</button>
+    </div>
+
+    <script>
+        document.getElementById('startBtn').addEventListener('click', function() {
+            window.location.href = 'option.html';
+        });
+    </script>
+</body>
+</html>

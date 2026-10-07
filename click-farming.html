@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>场景一：刷单诈骗</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 背景图（不重复，已虚化） -->
+    <div class="bg-container" style="background-image: url('素材/背景/three.png');"></div>
+
+    <!-- 小李立绘（靠右） -->
+    <div class="character-container dim single-right" id="characterLi">
+        <img src="素材/人物立绘/Lee.png" alt="小李" class="character-img">
+    </div>
+
+    <div class="dialog-box" id="dialogBox">
+        <div class="speaker-name" id="speakerName">小李</div>
+        <div class="dialog-text" id="dialogText">点击继续...</div>
+    </div>
+
+    <div class="choice-container hidden" id="choiceContainer">
+        <button class="choice-btn" id="choiceA">嘿嘿，还有这种好事，零花钱不用愁了</button>
+        <button class="choice-btn" id="choiceB">做个刷好评的任务让我白赚这么多？该不会是骗子吧</button>
+    </div>
+
+    <div class="system-toast" id="systemToast"></div>
+    <button class="return-btn" id="returnBtn">返回</button>
+
+        <script>
+        let currentBranch = 'start'; 
+        let stepIndex = 0;
+
+        const storyData = {
+            start: [
+                { speaker: '小李', text: '嗯？QQ兼职群里有好多消息' },
+                { speaker: '小李', text: '说什么“交50元报名费，完成好评任务可得百元红包奖励”' },
+                { type: 'choice' }
+            ],
+            badEnding: [
+                { speaker: '旁白', text: '前几次，小李完成任务，拿到了金额更大的红包。终于，对方让小李交上千元报名费，小李完成任务后，就联系不上对方了。' },
+                { type: 'toast', text: '达成成就“愿者上钩”' }
+            ],
+            goodEnding: [
+                { speaker: '旁白', text: '当时，小李不予理会。后来，小李听群里的水友说发消息的人是骗子，卷走了他们上千元。' },
+                { type: 'toast', text: '达成成就“明察秋毫”' }
+            ]
+        };
+
+        const characterLi = document.getElementById('characterLi');
+        const dialogBox = document.getElementById('dialogBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogText = document.getElementById('dialogText');
+        const choiceContainer = document.getElementById('choiceContainer');
+        const systemToast = document.getElementById('systemToast');
+        const returnBtn = document.getElementById('returnBtn');
+
+        let isLiSeen = false;
+
+        function resetCharacters() {
+            if (characterLi) {
+                characterLi.classList.remove('bright');
+                characterLi.classList.add('dim');
+                if (!isLiSeen) characterLi.classList.add('hidden-character');
+            }
+        }
+
+        function initGame() {
+            currentBranch = 'start'; stepIndex = 0;
+            isLiSeen = false;
+            returnBtn.style.display = 'none';
+            systemToast.classList.remove('show');
+            dialogBox.classList.remove('hidden', 'empty-text');
+            speakerName.style.display = 'none';
+            dialogText.textContent = '';
+            choiceContainer.classList.add('hidden');
+            resetCharacters();
+            renderNode();
+        }
+
+        function renderNode() {
+            const branchData = storyData[currentBranch];
+            if (!branchData || stepIndex >= branchData.length) return;
+            const node = branchData[stepIndex];
+
+            if (node.speaker) {
+                if (node.speaker === '旁白') {
+                    speakerName.style.display = 'none';
+                    resetCharacters();
+                } else {
+                    speakerName.style.display = 'block';
+                    speakerName.textContent = node.speaker;
+                    isLiSeen = true;
+                    characterLi.classList.remove('hidden-character');
+                    characterLi.classList.remove('dim');
+                    characterLi.classList.add('bright');
+                }
+                dialogText.textContent = node.text;
+                dialogBox.classList.remove('empty-text');
+                choiceContainer.classList.add('hidden');
+            } else if (node.type === 'choice') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                resetCharacters();
+                choiceContainer.classList.remove('hidden');
+            } else if (node.type === 'toast') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                characterLi.classList.add('hidden-character'); // 立绘消失
+                systemToast.textContent = node.text;
+                systemToast.classList.add('show');
+                setTimeout(() => { returnBtn.style.display = 'block'; }, 1000);
+            }
+        }
+
+        dialogBox.addEventListener('click', () => {
+            if (!choiceContainer.classList.contains('hidden')) return;
+            stepIndex++;
+            if (stepIndex < storyData[currentBranch].length) renderNode();
+        });
+
+        document.getElementById('choiceA').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'badEnding'; stepIndex = 0; renderNode(); });
+        document.getElementById('choiceB').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'goodEnding'; stepIndex = 0; renderNode(); });
+        returnBtn.addEventListener('click', () => { window.location.href = 'option.html'; });
+        window.onload = initGame;
+    </script>
+</body>
+</html>

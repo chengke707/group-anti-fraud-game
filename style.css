@@ -1,0 +1,203 @@
+/* ================= 全局变量定义 ================= */
+:root {
+    --bg-white: #ffffff;
+    --bg-orange: #ff7e00;
+    --btn-dark-blue: #0f2a5c;
+    --btn-bright-blue: #1e56c7;
+    --text-dark: #333333;
+    --text-white: #ffffff;
+    --transition-smooth: all 0.3s ease;
+}
+
+/* ================= 基础重置 ================= */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html {
+    width: 100%; height: 100vh;
+    font-family: 'Microsoft YaHei', sans-serif;
+    overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+    background-color: transparent; /* 改为透明，防止挡住背景图 */
+}
+
+/* ================= 背景图层 ================= */
+.bg-container {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0; /* 改为0，不再用-1 */
+    background-size: cover;
+    background-position: center;
+    filter: blur(6px);
+    transform: scale(1.05);
+    background-color: #e0e0e0; /* 图片加载失败时的后备底色 */
+}
+
+/* ================= 开始页面 ================= */
+.start-container { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+.start-btn {
+    padding: 20px 60px; font-size: 2rem; font-weight: bold;
+    color: var(--text-white); background-color: var(--btn-dark-blue);
+    border: none; border-radius: 50px; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: var(--transition-smooth);
+}
+.start-btn:hover { background-color: var(--btn-bright-blue); transform: scale(1.05); }
+
+/* ================= 选项页面 ================= */
+.option-container { display: flex; justify-content: center; align-items: center; gap: 20px; z-index: 10; width: 80%; flex-wrap: wrap; }
+.option-btn {
+    padding: 15px 30px; font-size: 1.2rem; font-weight: bold;
+    background-color: var(--bg-white); color: var(--text-dark);
+    border: 2px solid var(--btn-dark-blue); border-radius: 10px;
+    cursor: pointer; transition: var(--transition-smooth); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.option-btn:hover {
+    background-color: var(--bg-orange); color: var(--text-white);
+    border-color: var(--bg-orange); transform: translateY(-5px);
+}
+
+/* ==================================================================== */
+/* ===================== 游戏页面公共样式：立绘相关 ===================== */
+/* ==================================================================== */
+
+/* 立绘最外层容器：负责铺满整个屏幕，让内部的立绘有空间放置 */
+.characters-wrapper {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1; pointer-events: none; /* 穿透点击，不阻挡下方按钮 */
+}
+
+/* 【立绘核心容器】负责控制人物的位置和基础大小
+   注意：bottom: 0 表示底部对齐屏幕最下方；height: 70vh 统一了所有立绘的高度上限。
+   如果后续发现人物被对话框遮住脸，或者图片被裁剪，通常需要在这里微调。 */
+.character-container {
+    position: absolute; bottom: 0;
+    width: 100%; 
+    max-width: 450px; /* 立绘最大宽度限制 */
+    height: 70vh;     /* 统一高度，保证所有立绘底部对齐，超出部分会被裁剪 */
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-end; /* 将图片推向容器底部 */
+    transition: filter 0.4s ease, opacity 0.4s ease; /* 亮暗切换的过渡动画 */
+}
+
+/* 单/双立绘左右位置分配 */
+.character-container.left { left: 10%; }          /* 左侧人物（如妈妈、警察、前台） */
+.character-container.right { right: 10%; }        /* 右侧人物（如小李、小孙） */
+.character-container.single-right { right: 15%; left: auto; } /* 单人时的小李（如第三页） */
+
+/* 图片自身的适配方式 */
+.character-img {
+    width: 100%; 
+    height: 100%;
+    object-fit: contain;    /* 保持图片原始比例，不拉伸变形 */
+    object-position: bottom;/* 图片内容底部对齐容器底部 */
+}
+
+/* 立绘的亮暗状态（通过 CSS 类名切换） */
+.character-container.bright { filter: brightness(1) drop-shadow(0 0 10px rgba(255,255,255,0.3)); opacity: 1; } /* 亮起 */
+.character-container.dim { filter: brightness(0.3); opacity: 0.5; } /* 变暗 */
+/* 隐藏未登场角色 */
+.character-container.hidden-character { display: none !important; }
+
+
+/* ================= 对话框（100%不透明） ================= */
+.dialog-box {
+    position: fixed; bottom: 0; left: 0;
+    width: 100%; height: 220px;
+    background: #0a1428; /* 纯色，不透明 */
+    color: white; padding: 30px 15%;
+    cursor: pointer; z-index: 20;
+    display: flex; flex-direction: column; justify-content: center;
+    border-top: 2px solid var(--btn-dark-blue);
+    transition: opacity 0.3s ease;
+    /* 【重要提示】如果后续发现立绘的脚或腿透过对话框露出来了，或者人物被半遮挡，
+       可以在下面加一行： box-shadow: 0 0 0 1000px #ffffff; 铺一层纯白底色在下面 */
+}
+/* 注意：这里去掉了.hidden的隐藏逻辑，在JS中改为清空文字 */
+.dialog-box.empty-text { pointer-events: none; } /* 选项出现时不可点击 */
+
+.speaker-name {
+    font-size: 1.5rem; color: var(--bg-orange); font-weight: bold; margin-bottom: 10px;
+    display: none; /* 默认隐藏，有名字时由JS显示 */
+}
+.dialog-text { font-size: 1.3rem; line-height: 1.6; letter-spacing: 1px; }
+
+/* ================= 选项弹窗（居中） ================= */
+.choice-container {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; gap: 20px;
+    z-index: 30; width: 60%; max-width: 800px;
+    transition: opacity 0.3s ease;
+}
+.choice-container.hidden { opacity: 0; pointer-events: none; }
+
+.choice-btn {
+    padding: 20px 30px; font-size: 1.2rem;
+    color: var(--text-white); background-color: var(--btn-dark-blue);
+    border: 2px solid transparent; border-radius: 12px;
+    cursor: pointer; transition: var(--transition-smooth);
+    text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.choice-btn:hover { background-color: var(--btn-bright-blue); filter: brightness(1.2); transform: translateX(10px) scale(1.02); }
+
+/* ================= 系统提示 ================= */
+.system-toast {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background-color: black; color: white;
+    padding: 15px 40px; font-size: 1.8rem; font-weight: bold;
+    border-radius: 8px; z-index: 40; opacity: 0; pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.system-toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* ================= 返回按钮 ================= */
+.return-btn {
+    position: fixed; bottom: 40px; right: 40px;
+    padding: 15px 50px; font-size: 1.3rem; font-weight: bold;
+    color: white; background-color: var(--btn-dark-blue);
+    border: none; border-radius: 30px; cursor: pointer; z-index: 50;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: var(--transition-smooth); display: none;
+}
+.return-btn:hover { background-color: var(--btn-bright-blue); transform: translateY(-5px); }
+
+
+/* ==================================================================== */
+/* =================== 【人物立绘个性化微调区】 =================== */
+/* ==================================================================== */
+/* 使用说明：
+   1. 如果你想调整某个角色的大小，修改 scale(数字) —— 1 为原大，0.8 为缩小，1.2 为放大。
+   2. 如果你想调整某个角色的高低，修改 translateY(数字px) —— 负数为上移，正数为下移。
+   3. transform-origin: bottom center; 确保你调整时，人物脚底是固定不动的。
+   4. 如果发现某个角色被对话遮住脸，你可以调大 translateY(-100px) 把他往上提！
+*/
+
+/* 小李 (Lee.png) —— 默认初始值：原比例大小，上下左右无位移 */
+#characterLi .character-img {
+    transform: scale(1) translateY(-70px); 
+    transform-origin: bottom center;
+}
+
+/* 小孙 (Sun.png) —— 默认初始值：原比例大小，上下左右无位移 */
+#characterSun .character-img {
+    transform: scale(0.9) translateY(-160px);
+    transform-origin: bottom center;
+}
+
+/* 前台 (QT.png) —— 默认初始值：原比例大小，上下左右无位移 */
+#characterQT .character-img {
+    transform: scale(1.8) translateY(95px);
+    transform-origin: bottom center;
+}
+
+/* 妈妈 (Mom.png) —— 默认初始值：原比例大小，上下左右无位移 */
+#characterMom .character-img {
+    transform: scale(0.7) translateY(-230px);
+    transform-origin: bottom center;
+}
+
+/* 警察 (Cop.png) —— 默认初始值：原比例大小，上下左右无位移 */
+#characterCop .character-img {
+    transform: scale(0.9) translateY(-230px);
+    transform-origin: bottom center;
+}

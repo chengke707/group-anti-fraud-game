@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>场景二：AI换脸</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 背景图（不重复，已虚化） -->
+    <div class="bg-container" style="background-image: url('素材/背景/four.jpg');"></div>
+
+    <div class="characters-wrapper">
+        <!-- 小孙（左） -->
+        <div class="character-container left dim" id="characterSun">
+            <img src="素材/人物立绘/Sun.png" alt="小孙" class="character-img">
+        </div>
+        <!-- 小李（右） -->
+        <div class="character-container right dim" id="characterLi">
+            <img src="素材/人物立绘/Lee.png" alt="小李" class="character-img">
+        </div>
+    </div>
+
+    <div class="dialog-box" id="dialogBox">
+        <div class="speaker-name" id="speakerName">旁白</div>
+        <div class="dialog-text" id="dialogText">点击继续...</div>
+    </div>
+
+    <div class="choice-container hidden" id="choiceContainer">
+        <button class="choice-btn" id="choiceA">都是多年的交情了，人命关天，赶紧借他</button>
+        <button class="choice-btn" id="choiceB">我怎么没听他说过他有个弟弟？这里面怕不是有什么猫腻</button>
+    </div>
+
+    <div class="system-toast" id="systemToast"></div>
+    <button class="return-btn" id="returnBtn">返回</button>
+
+        <script>
+        let currentBranch = 'start'; 
+        let stepIndex = 0;
+        let seenSun = false;
+        let seenLi = false;
+
+        const storyData = {
+            start: [
+                { speaker: '旁白', text: '一天，小李接到了陌生的视频电话，点开一看，发现是发小小孙打来的。' },
+                { speaker: '小孙', pos: 'left', text: '嘿，小李啊，你还记得我吗？' },
+                { speaker: '小孙', pos: 'left', text: '我弟弟突然出了车祸，急需钱来做手术。你能借我个五六万吗？' },
+                { type: 'choice' }
+            ],
+            badEnding: [
+                { speaker: '小李', pos: 'right', text: '你先别急，我这就把钱给你打过去。' },
+                { speaker: '旁白', text: '不久后的同学聚会上，小李得知小孙根本没有弟弟，小孙本人对这件事也不知情，这才得知小孙的照片和声音被盗用，而自己被不法分子骗走了五六万。' },
+                { type: 'toast', text: '达成成就“以假乱真”' }
+            ],
+            goodEnding: [
+                { speaker: '小李', pos: 'right', text: '哦，是吗？既然是老朋友了，那么我们叙叙旧吧。你还记得8岁那年你做的只有我们两个人之间知道的事情吗？' },
+                { speaker: '小孙', pos: 'left', text: '嗯，呃......都过去那么多年了，谁还记得那么多。现在筹钱要紧。' },
+                { speaker: '小李', pos: 'right', text: '你当时说你一辈子都不会忘的。视频中的你该不会是骗子吧？（挂断电话）' },
+                { speaker: '旁白', text: '后来小李私下里告诉了小孙这件事，经小孙确认这是假视频后，他俩保留了证据并报了警。' },
+                { type: 'toast', text: '达成成就“洞若观火”' }
+            ]
+        };
+
+        const characterSun = document.getElementById('characterSun');
+        const characterLi = document.getElementById('characterLi');
+        const dialogBox = document.getElementById('dialogBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogText = document.getElementById('dialogText');
+        const choiceContainer = document.getElementById('choiceContainer');
+        const systemToast = document.getElementById('systemToast');
+        const returnBtn = document.getElementById('returnBtn');
+
+        function resetCharacters() {
+            // 小孙
+            characterSun.classList.remove('bright'); characterSun.classList.add('dim');
+            if (!seenSun) characterSun.classList.add('hidden-character'); else characterSun.classList.remove('hidden-character');
+            // 小李
+            characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+            if (!seenLi) characterLi.classList.add('hidden-character'); else characterLi.classList.remove('hidden-character');
+        }
+
+        function initGame() {
+            currentBranch = 'start'; stepIndex = 0;
+            seenSun = false; seenLi = false;
+            returnBtn.style.display = 'none';
+            systemToast.classList.remove('show');
+            dialogBox.classList.remove('hidden', 'empty-text');
+            speakerName.style.display = 'none';
+            dialogText.textContent = '';
+            choiceContainer.classList.add('hidden');
+            resetCharacters();
+            renderNode();
+        }
+
+        function renderNode() {
+            const branchData = storyData[currentBranch];
+            if (!branchData || stepIndex >= branchData.length) return;
+            const node = branchData[stepIndex];
+
+            if (node.speaker) {
+                if (node.speaker === '旁白') {
+                    speakerName.style.display = 'none';
+                    resetCharacters();
+                } else {
+                    speakerName.style.display = 'block';
+                    speakerName.textContent = node.speaker;
+                    if (node.pos === 'left') {
+                        seenSun = true;
+                        characterSun.classList.remove('hidden-character', 'dim');
+                        characterSun.classList.add('bright');
+                        characterLi.classList.remove('bright'); characterLi.classList.add('dim');
+                    } else if (node.pos === 'right') {
+                        seenLi = true;
+                        characterLi.classList.remove('hidden-character', 'dim');
+                        characterLi.classList.add('bright');
+                        characterSun.classList.remove('bright'); characterSun.classList.add('dim');
+                    }
+                }
+                dialogText.textContent = node.text;
+                dialogBox.classList.remove('empty-text');
+                choiceContainer.classList.add('hidden');
+            } else if (node.type === 'choice') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                resetCharacters();
+                choiceContainer.classList.remove('hidden');
+            } else if (node.type === 'toast') {
+                speakerName.style.display = 'none';
+                dialogText.textContent = '';
+                dialogBox.classList.add('empty-text');
+                characterSun.classList.add('hidden-character');
+                characterLi.classList.add('hidden-character');
+                systemToast.textContent = node.text;
+                systemToast.classList.add('show');
+                setTimeout(() => { returnBtn.style.display = 'block'; }, 1000);
+            }
+        }
+
+        dialogBox.addEventListener('click', () => {
+            if (!choiceContainer.classList.contains('hidden')) return;
+            stepIndex++;
+            if (stepIndex < storyData[currentBranch].length) renderNode();
+        });
+
+        document.getElementById('choiceA').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'badEnding'; stepIndex = 0; renderNode(); });
+        document.getElementById('choiceB').addEventListener('click', (e) => { e.stopPropagation(); currentBranch = 'goodEnding'; stepIndex = 0; renderNode(); });
+        returnBtn.addEventListener('click', () => { window.location.href = 'option.html'; });
+        window.onload = initGame;
+    </script>
+</body>
+</html>
